@@ -4,6 +4,7 @@ import logging
 import os
 import requests
 import zipfile
+import shutil
 import io
 
 # Глобальная переменная для хранения количества обработанных портов
@@ -101,11 +102,28 @@ def download_update():
         if response.status_code == 200:
             with open("update.zip", "wb") as zip_file:
                 zip_file.write(response.content)
-            print("Обновление успешно скачано. Пожалуйста, перезапустите программу для применения обновления.")
+            
+            # Распаковать архив
+            with zipfile.ZipFile("update.zip", "r") as zip_ref:
+                zip_ref.extractall(".")
+            
+            # Заменить файлы
+            for root, dirs, files in os.walk("PortScan-main"):
+                for file in files:
+                    src_path = os.path.join(root, file)
+                    dest_path = os.path.join(".", file)
+                    shutil.copy2(src_path, dest_path)
+            
+            # Удалить временную папку и архив
+            shutil.rmtree("PortScan-main")
+            os.remove("update.zip")
+            
+            print("Обновление успешно установлено. Пожалуйста, перезапустите программу для применения обновления.")
         else:
             print("Не удалось скачать обновление.")
     except Exception as e:
-        print(f"Ошибка при скачивании обновления: {str(e)}")
+        print(f"Ошибка при скачивании и установке обновления: {str(e)}")
+
 
 if __name__ == "__main__":
     clear_console()  # Очистка консоли при запуске
