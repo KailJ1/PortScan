@@ -1,3 +1,3 @@
 @echo off
-python port_scanner.py
+python Port-Scanner.py
 pause
