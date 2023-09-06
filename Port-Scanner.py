@@ -16,7 +16,7 @@ processed_ports = 0
 # Пример обновленных переменных
 github_repository = "https://github.com/KailJ1/PortScan"
 program_name = "Port Scanner"
-program_version = "1.5"
+program_version = "1.2.2"
 program_description = "Это программа для сканирования портов."
 
 # Функция для загрузки и обновления программы
@@ -59,17 +59,17 @@ def check_for_updates():
                 local_news = file.read().strip()
             if remote_news != local_news:
                 # Проверяем версию программы в локальных новостях
-                local_version_match = re.search(r"Version: (\d+\.\d+)", local_news)
+                local_version_match = re.search(r"Новая версия: (\d+\.\d+\.\d+)", local_news)
                 if local_version_match:
                     local_version = local_version_match.group(1)
                 else:
-                    local_version = "0.0"
+                    local_version = "0.0.0"
                 # Проверяем версию программы в удаленных новостях
-                remote_version_match = re.search(r"Version: (\d+\.\d+)", remote_news)
+                remote_version_match = re.search(r"Новая версия: (\d+\.\d+\.\d+)", remote_news)
                 if remote_version_match:
                     remote_version = remote_version_match.group(1)
                 else:
-                    remote_version = "0.0"
+                    remote_version = "0.0.0"
                 # Сравниваем версии и предлагаем обновление только при несоответствии версий
                 if remote_version != local_version:
                     print("Доступно обновление. Желаете скачать обновление?")
