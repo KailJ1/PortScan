@@ -1,67 +1,98 @@
 import socket
+import os
 import datetime
 import logging
-import os
-import requests
+import subprocess
 import zipfile
 import shutil
-import subprocess  # Модуль для перезапуска программы
-import io
+import requests
 
-# Глобальная переменная для хранения количества обработанных портов
-processed_ports = 0
-
-# Функция для очистки консоли
+# Очистка консоли
 def clear_console():
-    os.system("cls" if os.name == "nt" else "clear")
+    if os.name == 'posix':
+        subprocess.call('clear', shell=True)
+    elif os.name == 'nt':
+        subprocess.call('cls', shell=True)
 
 # Функция для сканирования портов
 def scan_ports(target_ip, start_port, end_port):
     global processed_ports
 
     try:
-        for port in range(start_port, end_port + 1):
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.settimeout(1)
-                result = sock.connect_ex((target_ip, port))
-                if result == 0:
-                    service_name = get_service_name(port)
-                    print(f"Активный порт: {port}, Служба: {service_name}")
+        if start_port == -1:
+            start_port = 1
+            end_port = 1024  # Стандартные порты
+
+            # Порты Minecraft и IP камеры
+            minecraft_ports = list(range(25000, 27001))
+            ip_camera_ports = [8000, 8080, 83, 60001]
+
+            # Добавляем стандартные порты к списку
+            open_ports = []
+            for port in range(start_port, end_port + 1):
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(1)
+                    result = sock.connect_ex((target_ip, port))
+                    if result == 0:
+                        service_name = get_service_name(port)
+                        print(f"Активный порт: {port}, Служба: {service_name}")
+                        open_ports.append(port)
+
+            # Сканирование портов Minecraft и IP камеры
+            for port in minecraft_ports + ip_camera_ports:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(1)
+                    result = sock.connect_ex((target_ip, port))
+                    if result == 0:
+                        service_name = get_service_name(port)
+                        print(f"Активный порт: {port}, Служба: {service_name}")
+                        open_ports.append(port)
+
+        else:
+            for port in range(start_port, end_port + 1):
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(1)
+                    result = sock.connect_ex((target_ip, port))
+                    if result == 0:
+                        service_name = get_service_name(port)
+                        print(f"Активный порт: {port}, Служба: {service_name}")
                 processed_ports += 1
     except KeyboardInterrupt:
         pass
 
+# Функция для ввода начального и конечного порта
+def input_ports():
+    print("Используйте -1 для сканирования стандартных портов, Minecraft, IP камер")
+    start_port = int(input("Введите начальный порт: "))
+
+    # Если начальный порт -1, то не запрашиваем конечный порт
+    if start_port == -1:
+        return start_port, start_port
+
+    end_port = int(input("Введите конечный порт: "))
+    return start_port, end_port
+
 # Функция для получения имени службы по порту
 def get_service_name(port):
     try:
-        with open("services.txt", "r") as file:
-            for line in file:
-                if line.strip():
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        port_number = parts[1].split("/")[0]
-                        if port_number.isdigit() and int(port_number) == port:
-                            return parts[0]
+        import socket
+        return socket.getservbyport(port)
+    except (socket.error, OSError):
         return "Неизвестно"
-    except Exception as e:
-        return "Ошибка"
 
-# Функция для логирования результатов сканирования
+# Функция для записи результатов сканирования в лог-файл
 def log_scan_results(target_ip, open_ports):
-    try:
-        log_directory = "logs"
-        if not os.path.exists(log_directory):
-            os.makedirs(log_directory)
-        log_filename = os.path.join(log_directory, f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_scan.log")
-        logging.basicConfig(filename=log_filename, level=logging.INFO)
-        logging.info(f"Сканирование цели {target_ip}")
-        logging.info("Открытые порты:")
-        for port in open_ports:
-            service_name = get_service_name(port)
-            logging.info(f"Порт: {port}, Служба: {service_name}")
-        print(f"Лог сохранен в папку: {os.path.abspath(log_filename)}")
-    except Exception as e:
-        print(f"Ошибка при создании лога: {str(e)}")
+    log_folder = "logs"
+    if not os.path.exists(log_folder):
+        os.mkdir(log_folder)
+    now = datetime.datetime.now()
+    log_filename = os.path.join(log_folder, now.strftime("%Y-%m-%d_%H-%M-%S_scan.log"))
+
+    logging.basicConfig(filename=log_filename, level=logging.INFO)
+    logging.info(f"Сканирование портов для IP-адреса {target_ip} завершено.")
+    for port in open_ports:
+        service_name = get_service_name(port)
+        logging.info(f"Активный порт: {port}, Служба: {service_name}")
 
 # Функция для проверки обновлений
 def check_for_updates():
@@ -135,36 +166,30 @@ def download_update():
     except Exception as e:
         print(f"Ошибка при скачивании и установке обновления: {str(e)}")
 
-
+# Главный блок программы
 if __name__ == "__main__":
-    clear_console()  # Очистка консоли при запуске
+    processed_ports = 0
 
-    check_for_updates()  # Проверка обновлений перед началом работы программы
+    clear_console()
 
-    while True:
-        try:
-            target = input("Введите IP-адрес для сканирования: ")
-            start_port = int(input("Введите начальный порт: "))
-            end_port = int(input("Введите конечный порт: "))
-            
-            # Остальной код для сканирования портов и вывода результатов
-            open_ports = []
-            print("Идет сканирование...")
-            for port in range(start_port, end_port + 1):
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.settimeout(1)
-                    result = sock.connect_ex((target, port))
-                    if result == 0:
-                        service_name = get_service_name(port)
-                        print(f"Активный порт: {port}, Служба: {service_name}")
-                        open_ports.append(port)
-            
-            log_scan_results(target, open_ports)
-            
-            print("Сканирование завершено.")
-            
-            choice = input("Введите '0' для продолжения или 'q' для завершения: ")
-            if choice.lower() == 'q':
-                break
-        except Exception as e:
-            print(f"Ошибка: {str(e)}")
+    print("Программа сканирования портов")
+    
+    # Проверка обновлений
+    check_for_updates()
+    
+    target_ip = input("Введите IP-адрес для сканирования: ")
+    
+    print("Используйте -1 для сканирования стандартных портов, Minecraft, IP камер")
+    start_port = int(input("Введите начальный порт: "))
+    
+    # Если начальный порт -1, то не запрашиваем конечный порт
+    if start_port != -1:
+        end_port = int(input("Введите конечный порт: "))
+    else:
+        end_port = start_port
+    
+    print("Идет сканирование...")
+    scan_ports(target_ip, start_port, end_port)
+
+    # Здесь добавляем предложение ввести 0 для продолжения после завершения сканирования
+    input("Сканирование завершено. Введите 0 для продолжения: ")
