@@ -92,8 +92,53 @@ def check_for_updates():
     except Exception as e:
         print(f"Ошибка при проверке обновлений: {str(e)}")
 
-# Остальной код остается без изменений
-# ...
+# Функция для сканирования портов
+def scan_ports(target_ip, start_port, end_port):
+    global processed_ports
+
+    try:
+        for port in range(start_port, end_port + 1):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(1)
+                result = sock.connect_ex((target_ip, port))
+                if result == 0:
+                    service_name = get_service_name(port)
+                    print(f"Активный порт: {port}, Служба: {service_name}")
+                processed_ports += 1
+    except KeyboardInterrupt:
+        pass
+
+# Функция для получения имени службы по порту
+def get_service_name(port):
+    try:
+        with open("services.txt", "r") as file:
+            for line in file:
+                if line.strip():
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        port_number = parts[1].split("/")[0]
+                        if port_number.isdigit() and int(port_number) == port:
+                            return parts[0]
+        return "Неизвестно"
+    except Exception as e:
+        return "Ошибка"
+
+# Функция для логирования результатов сканирования
+def log_scan_results(target_ip, open_ports):
+    try:
+        log_directory = "logs"
+        if not os.path.exists(log_directory):
+            os.makedirs(log_directory)
+        log_filename = os.path.join(log_directory, f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_scan.log")
+        logging.basicConfig(filename=log_filename, level=logging.INFO)
+        logging.info(f"Сканирование цели {target_ip}")
+        logging.info("Открытые порты:")
+        for port in open_ports:
+            service_name = get_service_name(port)
+            logging.info(f"Порт: {port}, Служба: {service_name}")
+        print(f"Лог сохранен в папку: {os.path.abspath(log_filename)}")
+    except Exception as e:
+        print(f"Ошибка при создании лога: {str(e)}")
 
 if __name__ == "__main__":
     clear_console()  # Очистка консоли при запуске
@@ -101,5 +146,29 @@ if __name__ == "__main__":
     check_for_updates()  # Проверяем обновления при запуске
 
     while True:
-        # Остальной код остается без изменений
-        # ...
+        try:
+            target = input("Введите IP-адрес для сканирования: ")
+            start_port = int(input("Введите начальный порт: "))
+            end_port = int(input("Введите конечный порт: "))
+            
+            # Остальной код для сканирования портов и вывода результатов
+            open_ports = []
+            print("Идет сканирование...")
+            for port in range(start_port, end_port + 1):
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(1)
+                    result = sock.connect_ex((target, port))
+                    if result == 0:
+                        service_name = get_service_name(port)
+                        print(f"Активный порт: {port}, Служба: {service_name}")
+                        open_ports.append(port)
+            
+            log_scan_results(target, open_ports)
+            
+            print("Сканирование завершено.")
+            
+            choice = input("Введите '0' для продолжения или 'q' для завершения: ")
+            if choice.lower() == 'q':
+                break
+        except Exception as e:
+            print(f"Ошибка: {str(e)}")
