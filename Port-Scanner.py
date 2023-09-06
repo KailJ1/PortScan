@@ -3,6 +3,8 @@ import datetime
 import logging
 import os
 import requests
+import zipfile
+import io
 
 # Глобальная переменная для хранения количества обработанных портов
 processed_ports = 0
@@ -91,7 +93,7 @@ def check_for_updates():
     except Exception as e:
         print(f"Ошибка при проверке обновлений: {str(e)}")
 
-# Функция для скачивания обновления
+# Функция для скачивания и применения обновления
 def download_update():
     try:
         update_url = "https://github.com/KailJ1/PortScan/archive/main.zip"
@@ -99,7 +101,7 @@ def download_update():
         if response.status_code == 200:
             with open("update.zip", "wb") as zip_file:
                 zip_file.write(response.content)
-            print("Обновление успешно скачано. Запустите программу после распаковки.")
+            print("Обновление успешно скачано. Пожалуйста, перезапустите программу для применения обновления.")
         else:
             print("Не удалось скачать обновление.")
     except Exception as e:
@@ -107,6 +109,8 @@ def download_update():
 
 if __name__ == "__main__":
     clear_console()  # Очистка консоли при запуске
+
+    check_for_updates()  # Проверка обновлений перед началом работы программы
 
     while True:
         try:
