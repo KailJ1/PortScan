@@ -23,28 +23,39 @@ def scan_ports(target_ip, start_port, end_port):
             start_port = 1
             end_port = 1024  # Стандартные порты
 
-            # Порты Minecraft и IP камеры
-            minecraft_ports = list(range(25000, 27001))
-            ip_camera_ports = [8000, 8080, 83, 60001]
+            # Словарь с информацией о стандартных портах и их службах
+            standard_ports = {
+                21: "FTP (управление)",
+                22: "SSH (безопасное удаленное управление)",
+                23: "Telnet (удаленное управление)",
+                25: "SMTP (почтовая служба)",
+                53: "DNS (система имен доменов)",
+                80: "HTTP (веб-сервер)",
+                110: "POP3 (получение почты)",
+                143: "IMAP (получение почты)",
+                443: "HTTPS (защищенный веб-сервер)",
+                465: "SMTPS (защищенная почтовая служба)",
+                993: "IMAPS (защищенный IMAP)",
+                995: "POP3S (защищенный POP3)",
+                3389: "RDP (удаленный рабочий стол)",
+                8000: "IP камера",
+                8080: "IP камера",
+                83: "IP камера",
+                60001: "IP камера"
+            }
 
-            # Добавляем стандартные порты к списку
+            # Добавляем стандартные порты Minecraft
+            for port in range(25000, 27001):
+                standard_ports[port] = "Minecraft (стандартный порт)"
+
+            # Сканирование стандартных портов и портов из словаря
             open_ports = []
             for port in range(start_port, end_port + 1):
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                     sock.settimeout(1)
                     result = sock.connect_ex((target_ip, port))
                     if result == 0:
-                        service_name = get_service_name(port)
-                        print(f"Активный порт: {port}, Служба: {service_name}")
-                        open_ports.append(port)
-
-            # Сканирование портов Minecraft и IP камеры
-            for port in minecraft_ports + ip_camera_ports:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.settimeout(1)
-                    result = sock.connect_ex((target_ip, port))
-                    if result == 0:
-                        service_name = get_service_name(port)
+                        service_name = get_service_name(port, standard_ports)
                         print(f"Активный порт: {port}, Служба: {service_name}")
                         open_ports.append(port)
 
@@ -62,8 +73,7 @@ def scan_ports(target_ip, start_port, end_port):
 
 # Функция для ввода начального и конечного порта
 def input_ports():
-    print("Используйте -1 для сканирования стандартных портов, Minecraft, IP камер")
-    start_port = int(input("Введите начальный порт: "))
+    start_port = int(input("Введите начальный порт (используйте -1 для сканирования стандартных портов, Minecraft, IP камер): "))
 
     # Если начальный порт -1, то не запрашиваем конечный порт
     if start_port == -1:
@@ -73,10 +83,13 @@ def input_ports():
     return start_port, end_port
 
 # Функция для получения имени службы по порту
-def get_service_name(port):
+def get_service_name(port, standard_ports=None):
     try:
         import socket
-        return socket.getservbyport(port)
+        if standard_ports and port in standard_ports:
+            return standard_ports[port]
+        else:
+            return socket.getservbyport(port)  # Возвращает имя службы, если порт не стандартный
     except (socket.error, OSError):
         return "Неизвестно"
 
@@ -179,14 +192,7 @@ if __name__ == "__main__":
     
     target_ip = input("Введите IP-адрес для сканирования: ")
     
-    print("Используйте -1 для сканирования стандартных портов, Minecraft, IP камер")
-    start_port = int(input("Введите начальный порт: "))
-    
-    # Если начальный порт -1, то не запрашиваем конечный порт
-    if start_port != -1:
-        end_port = int(input("Введите конечный порт: "))
-    else:
-        end_port = start_port
+    start_port, end_port = input_ports()
     
     print("Идет сканирование...")
     scan_ports(target_ip, start_port, end_port)
