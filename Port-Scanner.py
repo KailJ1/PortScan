@@ -16,7 +16,7 @@ processed_ports = 0
 # Пример обновленных переменных
 github_repository = "https://github.com/KailJ1/PortScan"
 program_name = "Port Scanner"
-program_version = "1.2.2"
+program_version = "1.2.3"
 program_description = "Это программа для сканирования портов."
 
 # Функция для очистки консоли
