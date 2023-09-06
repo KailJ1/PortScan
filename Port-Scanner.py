@@ -66,19 +66,19 @@ def check_for_updates():
     try:
         clear_console()  # Очистка консоли перед проверкой обновления
         print("Проверка обновлений...")
-        
+
         # Загрузка версии и изменений из файла Update.txt на GitHub
         update_url = "https://raw.githubusercontent.com/KailJ1/PortScan/main/Update.txt"
         response = requests.get(update_url)
-        
+
         if response.status_code == 200:
-            remote_data = response.text.strip().split("\n")
+            remote_data = response.content.decode("utf-8").strip().split("\n")
             remote_version = remote_data[0].split(": ")[1].strip()
-            
-            with open("Update.txt", "r") as local_file:
+
+            with open("Update.txt", "r", encoding="utf-8") as local_file:
                 local_data = local_file.read().strip().split("\n")
                 local_version = local_data[0].split(": ")[1].strip()
-            
+
             # Сравнение версий и вывод информации
             if remote_version > local_version:
                 print(f"Доступна новая версия {remote_version}.")
