@@ -5,6 +5,7 @@ import os
 import requests
 import zipfile
 import shutil
+import subprocess  # Модуль для перезапуска программы
 import io
 
 # Глобальная переменная для хранения количества обработанных портов
@@ -100,25 +101,35 @@ def download_update():
         update_url = "https://github.com/KailJ1/PortScan/archive/main.zip"
         response = requests.get(update_url)
         if response.status_code == 200:
+            clear_console()  # Очистка консоли перед установкой обновления
+            print("Обновление устанавливается...")
+
             with open("update.zip", "wb") as zip_file:
                 zip_file.write(response.content)
-            
+
             # Распаковать архив
             with zipfile.ZipFile("update.zip", "r") as zip_ref:
-                zip_ref.extractall(".")
-            
+                zip_ref.extractall("PortScan-main")
+
             # Заменить файлы
             for root, dirs, files in os.walk("PortScan-main"):
                 for file in files:
                     src_path = os.path.join(root, file)
                     dest_path = os.path.join(".", file)
                     shutil.copy2(src_path, dest_path)
-            
+
             # Удалить временную папку и архив
             shutil.rmtree("PortScan-main")
             os.remove("update.zip")
-            
+
             print("Обновление успешно установлено. Пожалуйста, перезапустите программу для применения обновления.")
+            
+            input("Нажмите Enter для перезапуска программы...")
+            
+            # Перезапустить программу
+            subprocess.call(["python", "Port-Scanner.py"])
+            exit()  # Завершить текущий экземпляр программы
+
         else:
             print("Не удалось скачать обновление.")
     except Exception as e:
