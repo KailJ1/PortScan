@@ -6,6 +6,7 @@ import threading
 import concurrent.futures
 import sys
 import requests
+import subprocess
 
 # Глобальная переменная для хранения количества обработанных портов
 processed_ports = 0
@@ -129,7 +130,10 @@ def update_program():
                 shutil.copy2(s, d)
 
         print("Обновление завершено. Пожалуйста, перезапустите программу.")
-        sys.exit()
+        input("Нажмите любую клавишу для перезапуска...")
+        # Перезапуск программы
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
     except Exception as e:
         print(f"Ошибка при обновлении программы: {str(e)}")
 
