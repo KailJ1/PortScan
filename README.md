@@ -1,37 +1,37 @@
-# Port Scanning Program
+# Программа сканирования портов
 
-The Port Scanning Program allows the user to scan ports on a remote device (IP address or domain name) and determine which ports are open. The program also supports checking for updates and updating to the latest version.
+Программа сканирования портов позволяет пользователю сканировать порты на удаленном устройстве (IP-адресе или доменном имени) и определять, какие порты открыты. Программа также поддерживает проверку обновлений и обновление до последней версии.
 
-## Features
+## Особенности
 
-- Scanning ports in a specified range.
-- Scanning standard ports or custom ports.
-- Logging scan results to a log file.
-- Identifying the service listening on open ports.
-- Checking for updates and the ability to update the program.
-- Simple command-line interface.
+- Сканирование портов в заданном диапазоне.
+- Сканирование стандартных портов или пользовательских портов.
+- Запись результатов сканирования в лог-файл.
+- Определение службы, прослушивающей на открытых портах.
+- Проверка обновлений и возможность обновления программы.
+- Простой интерфейс командной строки.
 
-## Installation Requirements
+## Требования к установке
 
 - Python 3.x
-- Libraries: requests (install using `pip install requests`)
+- Библиотеки: requests (установите с помощью `pip install requests`)
 
-## Usage
+## Использование
 
-1. Run the program following the instructions in the command-line interface.
-2. Enter the IP address or domain name to scan.
-3. Specify the port range to scan.
-4. The program will perform the scan and display the results in the console.
-5. Upon completing the scan, choose whether to exit the program or start a new scan.
+1. Запустите программу, следуя инструкциям в интерфейсе командной строки.
+2. Введите IP-адрес или доменное имя для сканирования.
+3. Укажите диапазон портов для сканирования.
+4. Программа выполнит сканирование и выведет результаты в консоль.
+5. По завершении сканирования, выберите, хотите ли вы завершить программу или начать новую проверку.
 
-## Update Checking
+## Проверка обновлений
 
-The program supports checking for updates. If a new version of the program is available, you will be notified about the option to update. You can choose to update to the latest version or continue using the current version.
+Программа поддерживает проверку обновлений. Если доступна новая версия программы, вы будете уведомлены о возможности обновления. Вы можете выбрать обновление до последней версии или продолжение работы с текущей версией.
 
-## License
+## Лицензия
 
-This program is distributed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Эта программа распространяется под лицензией MIT. Подробности см. в файле [LICENSE](LICENSE).
 
 ---
 
-Created with ❤️
+Создано с ❤️
