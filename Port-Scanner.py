@@ -2,7 +2,6 @@ import socket
 import datetime
 import logging
 import os
-import threading
 import concurrent.futures
 import sys
 import requests
@@ -11,13 +10,11 @@ import subprocess
 # Версия программы
 program_version = "1.2.4"
 
-# Глобальная переменная для хранения количества обработанных портов
-processed_ports = 0
-
 # Функция для сканирования портов в указанном диапазоне на заданном IP
 def scan_ports(target_ip, start_port, end_port):
     open_ports = []
     total_ports = end_port - start_port + 1
+    processed_ports = 0
 
     def scan_port(port):
         try:
@@ -28,7 +25,7 @@ def scan_ports(target_ip, start_port, end_port):
         except (socket.timeout, ConnectionRefusedError):
             pass
         finally:
-            global processed_ports
+            nonlocal processed_ports
             processed_ports += 1
             progress = processed_ports / total_ports * 100
             sys.stdout.write(f"\rПрогресс: {progress:.2f}%")
@@ -39,7 +36,7 @@ def scan_ports(target_ip, start_port, end_port):
         standard_ports = [21, 22, 80, 443, 3306, 8000, 8080]
         additional_ports = list(range(25560, 25581))
         total_ports += len(standard_ports) + len(additional_ports)
-        
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             for port in standard_ports + additional_ports:
                 executor.submit(scan_port, port)
@@ -75,7 +72,7 @@ def get_service_name(port):
     # Добавляем описание "IP камера" для портов 8000 и 8080
     if port in [8000, 8080]:
         return "IP камера"
-    
+
     # Добавляем сервис для портов от 25560 до 25580
     if 25560 <= port <= 25580:
         return "Minecraft Server"
@@ -88,7 +85,7 @@ def get_service_name(port):
         443: "HTTPS",
         3306: "MySQL",
     }
-    
+
     return services.get(port, "Неизвестно")
 
 # Функция для проверки обновлений
@@ -157,6 +154,7 @@ if __name__ == "__main__":
             if user_choice == "1":
                 print("Обновление начато...")
                 update_program()
+                sys.exit(0)  # Выход из программы для обновления
             else:
                 print("Продолжение работы с текущей версией.")
         else:
@@ -193,10 +191,7 @@ if __name__ == "__main__":
             log_scan_results(target_ip, open_ports)
         else:
             print("На заданном IP нет активных портов.")
-
-        while True:
-            choice = input("Нажмите 'q' для выхода или любую клавишу для начала новой проверки: ")
-            if choice.lower() == 'q':
-                sys.exit(0)  # Выход из программы
-            else:
-                break
+        
+        choice = input("Нажмите 'q' для выхода или любую клавишу для начала новой проверки: ")
+        if choice.lower() == 'q':
+            sys.exit(0)  # Выход из программы
