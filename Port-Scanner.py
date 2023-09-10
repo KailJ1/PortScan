@@ -8,7 +8,7 @@ import requests
 import subprocess
 
 # Версия программы
-program_version = "1.2.4"
+program_version = "1.2.5"
 
 # Функция для сканирования портов в указанном диапазоне на заданном IP
 def scan_ports(target_ip, start_port, end_port):
@@ -32,9 +32,9 @@ def scan_ports(target_ip, start_port, end_port):
             sys.stdout.flush()
 
     if start_port == -1:
-        # Если указан порт -1, сканируем только стандартные порты и диапазон от 25560 до 25580
-        standard_ports = [21, 22, 80, 443, 3306, 8000, 8080]
-        additional_ports = list(range(25560, 25581))
+        # Если указан порт -1, сканируем только стандартные порты и диапазон от 25499 до 25699
+        standard_ports = [21, 22, 80, 443, 3306, 8000, 8080, 83, 60001]
+        additional_ports = list(range(25499, 25699))
         total_ports += len(standard_ports) + len(additional_ports)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -70,11 +70,11 @@ def log_scan_results(target_ip, open_ports):
 # Функция для определения службы, прослушивающей на порту
 def get_service_name(port):
     # Добавляем описание "IP камера" для портов 8000 и 8080
-    if port in [8000, 8080]:
+    if port in [8000, 8080, 83, 60001]:
         return "IP камера"
 
-    # Добавляем сервис для портов от 25560 до 25580
-    if 25560 <= port <= 25580:
+    # Добавляем сервис для портов от 25499 до 25699
+    if 25499 <= port <= 25699:
         return "Minecraft Server"
 
     # Добавьте здесь соответствия портов и служб, если необходимо
@@ -178,7 +178,7 @@ if __name__ == "__main__":
             print(f"Не удалось разрешить доменное имя: {target}")
             continue
         
-        start_port = int(input("Введите начальный порт для сканирования (-1 для стандартных и 25560-25580): "))
+        start_port = int(input("Введите начальный порт для сканирования (-1 для стандартных и Minecraft портов): "))
 
         if start_port != -1:
             end_port = int(input("Введите конечный порт для сканирования: "))
