@@ -8,7 +8,7 @@ import requests
 import subprocess
 
 # Версия программы
-program_version = "1.2.4"
+program_version = "1.2.1"
 
 # Функция для сканирования портов в указанном диапазоне на заданном IP
 def scan_ports(target_ip, start_port, end_port):
@@ -156,7 +156,7 @@ if __name__ == "__main__":
             print(f"Новая версия: {latest_version}")
             print("Обновления:")
             for change in changes.split("\n"):
-                print(f"- {change.strip()}")
+                print(f"{change.strip()}")
             user_choice = input("Хотите обновить программу? (1 - Да, 2 - Нет): ")
             if user_choice == "1":
                 print("Обновление начато...")
