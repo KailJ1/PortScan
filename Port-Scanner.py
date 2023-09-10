@@ -8,6 +8,9 @@ import sys
 import requests
 import subprocess
 
+# Версия программы
+program_version = "1.2.3"
+
 # Глобальная переменная для хранения количества обработанных портов
 processed_ports = 0
 
@@ -148,15 +151,16 @@ if __name__ == "__main__":
     # Проверяем обновления
     latest_version = check_updates()
     if latest_version:
-        print(f"Доступна новая версия: {latest_version}")
-        user_choice = input("Хотите обновить программу? (1 - Да, 2 - Нет): ")
-        if user_choice == "1":
-            print("Обновление начато...")
-            update_program()
+        if latest_version != program_version:
+            print(f"Доступна новая версия: {latest_version}")
+            user_choice = input("Хотите обновить программу? (1 - Да, 2 - Нет): ")
+            if user_choice == "1":
+                print("Обновление начато...")
+                update_program()
+            else:
+                print("Продолжение работы с текущей версией.")
         else:
-            print("Продолжение работы с текущей версией.")
-    else:
-        print("Программа запущена в последней версии.")
+            print("Программа запущена в последней версии.")
 
     target = input("Введите IP-адрес или доменное имя для сканирования: ")
     
