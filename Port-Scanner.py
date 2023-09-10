@@ -1,201 +1,179 @@
 import socket
-import os
 import datetime
 import logging
-import subprocess
-import zipfile
-import shutil
+import os
+import threading
+import concurrent.futures
+import sys
 import requests
 
-# Очистка консоли
-def clear_console():
-    if os.name == 'posix':
-        subprocess.call('clear', shell=True)
-    elif os.name == 'nt':
-        subprocess.call('cls', shell=True)
+# Глобальная переменная для хранения количества обработанных портов
+processed_ports = 0
 
-# Функция для сканирования портов
+# Функция для сканирования портов в указанном диапазоне на заданном IP
 def scan_ports(target_ip, start_port, end_port):
-    global processed_ports
+    open_ports = []
+    total_ports = end_port - start_port + 1
 
-    try:
-        if start_port == -1:
-            start_port = 1
-            end_port = 1024  # Стандартные порты
+    def scan_port(port):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1)
+                s.connect((target_ip, port))
+            open_ports.append(port)
+        except (socket.timeout, ConnectionRefusedError):
+            pass
+        finally:
+            global processed_ports
+            processed_ports += 1
+            progress = processed_ports / total_ports * 100
+            sys.stdout.write(f"\rПрогресс: {progress:.2f}%")
+            sys.stdout.flush()
 
-            # Словарь с информацией о стандартных портах и их службах
-            standard_ports = {
-                21: "FTP (управление)",
-                22: "SSH (безопасное удаленное управление)",
-                23: "Telnet (удаленное управление)",
-                25: "SMTP (почтовая служба)",
-                53: "DNS (система имен доменов)",
-                80: "HTTP (веб-сервер)",
-                110: "POP3 (получение почты)",
-                143: "IMAP (получение почты)",
-                443: "HTTPS (защищенный веб-сервер)",
-                465: "SMTPS (защищенная почтовая служба)",
-                993: "IMAPS (защищенный IMAP)",
-                995: "POP3S (защищенный POP3)",
-                3389: "RDP (удаленный рабочий стол)",
-                8000: "IP камера",
-                8080: "IP камера",
-                83: "IP камера",
-                60001: "IP камера"
-            }
-
-            # Добавляем стандартные порты Minecraft
-            for port in range(25000, 27001):
-                standard_ports[port] = "Minecraft (стандартный порт)"
-
-            # Сканирование стандартных портов и портов из словаря
-            open_ports = []
-            for port in range(start_port, end_port + 1):
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.settimeout(1)
-                    result = sock.connect_ex((target_ip, port))
-                    if result == 0:
-                        service_name = get_service_name(port, standard_ports)
-                        print(f"Активный порт: {port}, Служба: {service_name}")
-                        open_ports.append(port)
-
-        else:
-            for port in range(start_port, end_port + 1):
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.settimeout(1)
-                    result = sock.connect_ex((target_ip, port))
-                    if result == 0:
-                        service_name = get_service_name(port)
-                        print(f"Активный порт: {port}, Служба: {service_name}")
-                processed_ports += 1
-    except KeyboardInterrupt:
-        pass
-
-# Функция для ввода начального и конечного порта
-def input_ports():
-    start_port = int(input("Введите начальный порт (используйте -1 для сканирования стандартных портов, Minecraft, IP камер): "))
-
-    # Если начальный порт -1, то не запрашиваем конечный порт
     if start_port == -1:
-        return start_port, start_port
+        # Если указан порт -1, сканируем только стандартные порты и диапазон от 25560 до 25580
+        standard_ports = [21, 22, 80, 443, 3306, 8000, 8080]
+        additional_ports = list(range(25560, 25581))
+        total_ports += len(standard_ports) + len(additional_ports)
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            for port in standard_ports + additional_ports:
+                executor.submit(scan_port, port)
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            for port in range(start_port, end_port + 1):
+                executor.submit(scan_port, port)
 
-    end_port = int(input("Введите конечный порт: "))
-    return start_port, end_port
+    sys.stdout.write("\n")  # Переводим строку после завершения сканирования
+    sys.stdout.flush()
 
-# Функция для получения имени службы по порту
-def get_service_name(port, standard_ports=None):
-    try:
-        import socket
-        if standard_ports and port in standard_ports:
-            return standard_ports[port]
-        else:
-            return socket.getservbyport(port)  # Возвращает имя службы, если порт не стандартный
-    except (socket.error, OSError):
-        return "Неизвестно"
+    return open_ports
 
-# Функция для записи результатов сканирования в лог-файл
+# Функция для записи логов в файл
 def log_scan_results(target_ip, open_ports):
-    log_folder = "logs"
-    if not os.path.exists(log_folder):
-        os.mkdir(log_folder)
-    now = datetime.datetime.now()
-    log_filename = os.path.join(log_folder, now.strftime("%Y-%m-%d_%H-%M-%S_scan.log"))
+    current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    log_directory = "logs"
+    log_filename = f"{log_directory}/{current_datetime}_scan.log"
+
+    # Проверяем наличие директории "logs" и создаем ее, если она отсутствует
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
 
     logging.basicConfig(filename=log_filename, level=logging.INFO)
-    logging.info(f"Сканирование портов для IP-адреса {target_ip} завершено.")
+    logging.info(f"Сканирование портов на {target_ip}")
+
     for port in open_ports:
         service_name = get_service_name(port)
-        logging.info(f"Активный порт: {port}, Служба: {service_name}")
+        logging.info(f"IP: {target_ip}, Port: {port}, Service: {service_name}")
+
+# Функция для определения службы, прослушивающей на порту
+def get_service_name(port):
+    # Добавляем описание "IP камера" для портов 8000 и 8080
+    if port in [8000, 8080]:
+        return "IP камера"
+    
+    # Добавляем сервис для портов от 25560 до 25580
+    if 25560 <= port <= 25580:
+        return "Minecraft Server"
+
+    # Добавьте здесь соответствия портов и служб, если необходимо
+    services = {
+        21: "FTP",
+        22: "SSH",
+        80: "HTTP",
+        443: "HTTPS",
+        3306: "MySQL",
+    }
+    
+    return services.get(port, "Неизвестно")
 
 # Функция для проверки обновлений
-def check_for_updates():
+def check_updates():
+    github_url = "https://raw.githubusercontent.com/KailJ1/PortScan/main/Update.txt"
     try:
-        clear_console()  # Очистка консоли перед проверкой обновления
-        print("Проверка обновлений...")
-
-        # Загрузка версии и изменений из файла Update.txt на GitHub
-        update_url = "https://raw.githubusercontent.com/KailJ1/PortScan/main/Update.txt"
-        response = requests.get(update_url)
-
+        response = requests.get(github_url)
         if response.status_code == 200:
-            remote_data = response.content.decode("utf-8").strip().split("\n")
-            remote_version = remote_data[0].split(": ")[1].strip()
-
-            with open("Update.txt", "r", encoding="utf-8") as local_file:
-                local_data = local_file.read().strip().split("\n")
-                local_version = local_data[0].split(": ")[1].strip()
-
-            # Сравнение версий и вывод информации
-            if remote_version > local_version:
-                print(f"Доступна новая версия {remote_version}.")
-                print("\n".join(remote_data[1:]))
-                choice = input("Введите '1' для скачивания обновления или '2' для продолжения без обновления: ")
-                if choice == '1':
-                    download_update()
-            else:
-                print("У вас установлена последняя версия.")
-        else:
-            print("Не удалось проверить обновления.")
+            content = response.text
+            version_start = content.find("Version:") + 8
+            version_end = content.find("Changes:")
+            if version_start != -1 and version_end != -1:
+                latest_version = content[version_start:version_end].strip()
+                return latest_version
     except Exception as e:
         print(f"Ошибка при проверке обновлений: {str(e)}")
+    return None
 
-# Функция для скачивания и применения обновления
-def download_update():
+# Функция для обновления программы
+def update_program():
+    github_url = "https://github.com/KailJ1/PortScan/archive/main.zip"
     try:
-        update_url = "https://github.com/KailJ1/PortScan/archive/main.zip"
-        response = requests.get(update_url)
-        if response.status_code == 200:
-            clear_console()  # Очистка консоли перед установкой обновления
-            print("Обновление устанавливается...")
+        import zipfile
+        import shutil
+        import urllib.request
 
-            with open("update.zip", "wb") as zip_file:
-                zip_file.write(response.content)
+        # Загрузка архива с GitHub
+        with urllib.request.urlopen(github_url) as response, open("update.zip", 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
 
-            # Распаковать архив
-            with zipfile.ZipFile("update.zip", "r") as zip_ref:
-                zip_ref.extractall("PortScan-main")
+        # Распаковка архива
+        with zipfile.ZipFile("update.zip", 'r') as zip_ref:
+            zip_ref.extractall("update")
 
-            # Заменить файлы
-            for root, dirs, files in os.walk("PortScan-main"):
-                for file in files:
-                    src_path = os.path.join(root, file)
-                    dest_path = os.path.join(".", file)
-                    shutil.copy2(src_path, dest_path)
+        # Копирование файлов из архива в текущую директорию
+        for item in os.listdir("update/PortScan-main"):
+            s = os.path.join("update/PortScan-main", item)
+            d = os.path.join(os.getcwd(), item)
+            if os.path.isdir(s):
+                shutil.copytree(s, d, symlinks=True)
+            else:
+                shutil.copy2(s, d)
 
-            # Удалить временную папку и архив
-            shutil.rmtree("PortScan-main")
-            os.remove("update.zip")
-
-            print("Обновление успешно установлено. Пожалуйста, перезапустите программу для применения обновления.")
-            
-            input("Нажмите Enter для перезапуска программы...")
-            
-            # Перезапустить программу
-            subprocess.call(["python", "Port-Scanner.py"])
-            exit()  # Завершить текущий экземпляр программы
-
-        else:
-            print("Не удалось скачать обновление.")
+        print("Обновление завершено. Пожалуйста, перезапустите программу.")
+        sys.exit()
     except Exception as e:
-        print(f"Ошибка при скачивании и установке обновления: {str(e)}")
+        print(f"Ошибка при обновлении программы: {str(e)}")
 
-# Главный блок программы
 if __name__ == "__main__":
-    processed_ports = 0
+    os.system("cls" if os.name == "nt" else "clear")  # Очистка консоли при запуске
 
-    clear_console()
+    target = input("Введите IP-адрес или доменное имя для сканирования: ")
+    
+    try:
+        # Пытаемся разрешить доменное имя в IP-адрес
+        target_ip = socket.gethostbyname(target)
+        print(f"IP-адрес для сканирования: {target_ip}")
+    except socket.gaierror:
+        print(f"Не удалось разрешить доменное имя: {target}")
+        sys.exit(1)
+    
+    start_port = int(input("Введите начальный порт для сканирования (-1 для стандартных и 25560-25580): "))
 
-    print("Программа сканирования портов")
-    
-    # Проверка обновлений
-    check_for_updates()
-    
-    target_ip = input("Введите IP-адрес для сканирования: ")
-    
-    start_port, end_port = input_ports()
-    
-    print("Идет сканирование...")
-    scan_ports(target_ip, start_port, end_port)
+    if start_port != -1:
+        end_port = int(input("Введите конечный порт для сканирования: "))
+    else:
+        end_port = start_port  # Если указан порт -1, конечный порт также равен -1
 
-    # Здесь добавляем предложение ввести 0 для продолжения после завершения сканирования
-    input("Сканирование завершено. Введите 0 для продолжения: ")
+    print("Идёт сканирование...")  # Добавляем сообщение о начале сканирования
+
+    open_ports = scan_ports(target_ip, start_port, end_port)
+
+    if open_ports:
+        print("Активные порты:")
+        for port in open_ports:
+            service_name = get_service_name(port)
+            print(f"IP: {target_ip}, Port: {port}, Service: {service_name}")
+
+        log_scan_results(target_ip, open_ports)
+    else:
+        print("На заданном IP нет активных портов.")
+    
+    # Проверяем обновления
+    latest_version = check_updates()
+    if latest_version:
+        print(f"Доступна новая версия: {latest_version}")
+        user_choice = input("Хотите обновить программу? (1 - Да, 2 - Нет): ")
+        if user_choice == "1":
+            print("Обновление начато...")
+            update_program()
+        else:
+            print("Продолжение работы с текущей версией.")
