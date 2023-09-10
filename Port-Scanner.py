@@ -136,6 +136,19 @@ def update_program():
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")  # Очистка консоли при запуске
 
+    # Проверяем обновления
+    latest_version = check_updates()
+    if latest_version:
+        print(f"Доступна новая версия: {latest_version}")
+        user_choice = input("Хотите обновить программу? (1 - Да, 2 - Нет): ")
+        if user_choice == "1":
+            print("Обновление начато...")
+            update_program()
+        else:
+            print("Продолжение работы с текущей версией.")
+    else:
+        print("Программа запущена в последней версии.")
+
     target = input("Введите IP-адрес или доменное имя для сканирования: ")
     
     try:
@@ -166,14 +179,3 @@ if __name__ == "__main__":
         log_scan_results(target_ip, open_ports)
     else:
         print("На заданном IP нет активных портов.")
-    
-    # Проверяем обновления
-    latest_version = check_updates()
-    if latest_version:
-        print(f"Доступна новая версия: {latest_version}")
-        user_choice = input("Хотите обновить программу? (1 - Да, 2 - Нет): ")
-        if user_choice == "1":
-            print("Обновление начато...")
-            update_program()
-        else:
-            print("Продолжение работы с текущей версией.")
