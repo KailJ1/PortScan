@@ -34,4 +34,4 @@ This program is distributed under the MIT License. See the [LICENSE](LICENSE) fi
 
 ---
 
-Created with ❤️ by OpenAI GPT-3.5
+Created with ❤️
