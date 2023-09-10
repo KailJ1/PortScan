@@ -8,7 +8,7 @@ import requests
 import subprocess
 
 # Версия программы
-program_version = "1.2.4"
+program_version = "1.2.6"
 
 # Функция для сканирования портов в указанном диапазоне на заданном IP
 def scan_ports(target_ip, start_port, end_port):
