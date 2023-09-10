@@ -154,7 +154,9 @@ if __name__ == "__main__":
         if latest_version != program_version:
             print(f"Ваша версия: {program_version}")
             print(f"Новая версия: {latest_version}")
-            print(f"Обновления: {changes}")
+            print("Обновления:")
+            for change in changes.split("\n"):
+                print(f"- {change.strip()}")
             user_choice = input("Хотите обновить программу? (1 - Да, 2 - Нет): ")
             if user_choice == "1":
                 print("Обновление начато...")
