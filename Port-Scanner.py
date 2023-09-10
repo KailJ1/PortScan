@@ -118,16 +118,21 @@ def update_program():
 
         # Распаковка архива
         with zipfile.ZipFile("update.zip", 'r') as zip_ref:
-            zip_ref.extractall("update")
+            zip_ref.extractall()
 
         # Копирование файлов из архива в текущую директорию
-        for item in os.listdir("update/PortScan-main"):
-            s = os.path.join("update/PortScan-main", item)
+        update_dir = os.path.join(os.getcwd(), "PortScan-main")
+        for item in os.listdir(update_dir):
+            s = os.path.join(update_dir, item)
             d = os.path.join(os.getcwd(), item)
             if os.path.isdir(s):
                 shutil.copytree(s, d, symlinks=True)
             else:
                 shutil.copy2(s, d)
+
+        # Удаляем архив и временную директорию обновления
+        os.remove("update.zip")
+        shutil.rmtree(update_dir)
 
         print("Обновление завершено. Пожалуйста, перезапустите программу.")
         input("Нажмите любую клавишу для перезапуска...")
