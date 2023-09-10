@@ -9,7 +9,7 @@ import requests
 import subprocess
 
 # Версия программы
-program_version = "1.2.3"
+program_version = "1.2.4"
 
 # Глобальная переменная для хранения количества обработанных портов
 processed_ports = 0
