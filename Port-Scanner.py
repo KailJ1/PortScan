@@ -99,10 +99,13 @@ def check_updates():
             version_end = content.find("Changes:")
             if version_start != -1 and version_end != -1:
                 latest_version = content[version_start:version_end].strip()
-                return latest_version
+                changes_start = version_end + 8
+                changes_end = content.find("End of Changes")
+                changes = content[changes_start:changes_end].strip()
+                return latest_version, changes
     except Exception as e:
         print(f"Ошибка при проверке обновлений: {str(e)}")
-    return None
+    return None, None
 
 # Функция для обновления программы
 def update_program():
@@ -146,10 +149,12 @@ if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")  # Очистка консоли при запуске
 
     # Проверяем обновления
-    latest_version = check_updates()
+    latest_version, changes = check_updates()
     if latest_version:
         if latest_version != program_version:
-            print(f"Доступна новая версия: {latest_version}")
+            print(f"Ваша версия: {program_version}")
+            print(f"Новая версия: {latest_version}")
+            print(f"Обновления: {changes}")
             user_choice = input("Хотите обновить программу? (1 - Да, 2 - Нет): ")
             if user_choice == "1":
                 print("Обновление начато...")
