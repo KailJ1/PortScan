@@ -162,33 +162,41 @@ if __name__ == "__main__":
         else:
             print("Программа запущена в последней версии.")
 
-    target = input("Введите IP-адрес или доменное имя для сканирования: ")
-    
-    try:
-        # Пытаемся разрешить доменное имя в IP-адрес
-        target_ip = socket.gethostbyname(target)
-        print(f"IP-адрес для сканирования: {target_ip}")
-    except socket.gaierror:
-        print(f"Не удалось разрешить доменное имя: {target}")
-        sys.exit(1)
-    
-    start_port = int(input("Введите начальный порт для сканирования (-1 для стандартных и 25560-25580): "))
+    while True:
+        target = input("Введите IP-адрес или доменное имя для сканирования: ")
+        
+        try:
+            # Пытаемся разрешить доменное имя в IP-адрес
+            target_ip = socket.gethostbyname(target)
+            print(f"IP-адрес для сканирования: {target_ip}")
+        except socket.gaierror:
+            print(f"Не удалось разрешить доменное имя: {target}")
+            continue
+        
+        start_port = int(input("Введите начальный порт для сканирования (-1 для стандартных и 25560-25580): "))
 
-    if start_port != -1:
-        end_port = int(input("Введите конечный порт для сканирования: "))
-    else:
-        end_port = start_port  # Если указан порт -1, конечный порт также равен -1
+        if start_port != -1:
+            end_port = int(input("Введите конечный порт для сканирования: "))
+        else:
+            end_port = start_port  # Если указан порт -1, конечный порт также равен -1
 
-    print("Идёт сканирование...")  # Добавляем сообщение о начале сканирования
+        print("Идёт сканирование...")  # Добавляем сообщение о начале сканирования
 
-    open_ports = scan_ports(target_ip, start_port, end_port)
+        open_ports = scan_ports(target_ip, start_port, end_port)
 
-    if open_ports:
-        print("Активные порты:")
-        for port in open_ports:
-            service_name = get_service_name(port)
-            print(f"IP: {target_ip}, Port: {port}, Service: {service_name}")
+        if open_ports:
+            print("Активные порты:")
+            for port in open_ports:
+                service_name = get_service_name(port)
+                print(f"IP: {target_ip}, Port: {port}, Service: {service_name}")
 
-        log_scan_results(target_ip, open_ports)
-    else:
-        print("На заданном IP нет активных портов.")
+            log_scan_results(target_ip, open_ports)
+        else:
+            print("На заданном IP нет активных портов.")
+
+        while True:
+            choice = input("Нажмите 'q' для выхода или любую клавишу для начала новой проверки: ")
+            if choice.lower() == 'q':
+                sys.exit(0)  # Выход из программы
+            else:
+                break
